@@ -1872,7 +1872,22 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
           m_mf_allocator->alloc(inst, inst.accessq_back(),
                                 m_core->get_gpu()->gpu_sim_cycle +
                                     m_core->get_gpu()->gpu_tot_sim_cycle);
-      unsigned bank_id = m_config->m_L1D_config.set_bank(mf->get_addr());
+      //////////////////////////// PA3 ////////////////////////////
+	  address_type addr = mf->get_addr();
+      if (mf->get_inst().is_load() && addr >= 0xc0000000 && addr <= 0xc00fffff) {
+        // Bypass L1D cache for this load
+        mf->set_bypass_L1(true); // Flag to mark it was bypassed
+        m_icnt->push(mf->get_sid(), mf);  // Push directly to interconnect
+        inst.accessq_pop_back(); // Remove from instruction queue
+
+        // Count bypassed loads
+        unsigned kid = mf->get_inst().get_kernel().get_uid();
+        m_core->incr_bypassed_loads(kid);
+
+        continue;
+      }
+	  //////////////////////////// PA3 ////////////////////////////
+	  unsigned bank_id = m_config->m_L1D_config.set_bank(mf->get_addr());
       assert(bank_id < m_config->m_L1D_config.l1_banks);
 
       if ((l1_latency_queue[bank_id][m_config->m_L1D_config.l1_latency - 1]) ==
@@ -1905,7 +1920,21 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue_l1cache(
         m_mf_allocator->alloc(inst, inst.accessq_back(),
                               m_core->get_gpu()->gpu_sim_cycle +
                                   m_core->get_gpu()->gpu_tot_sim_cycle);
-    std::list<cache_event> events;
+    //////////////////////////// PA3 ////////////////////////////
+	address_type addr = mf->get_addr();
+    if (mf->get_inst().is_load() && addr >= 0xc0000000 && addr <= 0xc00fffff) {
+      mf->set_bypass_L1(true);
+      m_icnt->push(mf->get_sid(), mf);
+      inst.accessq_pop_back();
+
+      // Count bypassed loads
+      unsigned kid = mf->get_inst().get_kernel().get_uid();
+      m_core->incr_bypassed_loads(kid);
+
+      return result;
+    }
+	//////////////////////////// PA3 ////////////////////////////
+	std::list<cache_event> events;
     enum cache_request_status status = cache->access(
         mf->get_addr(), mf,
         m_core->get_gpu()->gpu_sim_cycle + m_core->get_gpu()->gpu_tot_sim_cycle,
