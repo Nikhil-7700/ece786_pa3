@@ -1914,19 +1914,6 @@ class shader_core_ctx : public core_t {
   }
   kernel_info_t *get_kernel() { return m_kernel; }
   unsigned get_sid() const { return m_sid; }
-  
-  //////////////////////////// PA3 ////////////////////////////
-  // Increment bypassed load count for a given kernel
-  void incr_bypassed_loads(unsigned kernel_id) {
-    m_bypassed_loads[kernel_id]++;
-  }
-  // Print bypassed load statistics for all kernels
-  void print_bypassed_load_stats() const {
-    for (const auto &entry : m_bypassed_loads) {
-        printf("Kernel %u: Bypassed Load Instructions = %u\n", entry.first, entry.second);
-    }
-  }
-  //////////////////////////// PA3 ////////////////////////////
 
   // used by functional simulation:
   // modifiers
@@ -2276,9 +2263,6 @@ class shader_core_ctx : public core_t {
   unsigned int m_occupied_ctas;
   std::bitset<MAX_THREAD_PER_SM> m_occupied_hwtid;
   std::map<unsigned int, unsigned int> m_occupied_cta_to_hwtid;
-  //////////////////////////// PA3 ////////////////////////////
-  std::map<unsigned, unsigned> m_bypassed_loads;
-  //////////////////////////// PA3 ////////////////////////////
 };
 
 class exec_shader_core_ctx : public shader_core_ctx {
